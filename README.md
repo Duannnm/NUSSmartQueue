@@ -1,70 +1,160 @@
-# Getting Started with Create React App
+# NUSmartQueue - Smart Queue Management for NUS
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A real-time queue management system for NUS canteens that helps students avoid long queues and enables vendors to manage their stall status efficiently.
 
-## Available Scripts
+## 🚀 Quick Start
 
-In the project directory, you can run:
+### Prerequisites
+- Node.js (version 16 or higher)
+- npm or yarn package manager
 
-### `npm start`
+### Installation & Setup
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/YourUsername/NUSmartQueue.git
+   cd NUSmartQueue
+   ```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-### `npm test`
+3. **Start the development server**
+   ```bash
+   npm run dev
+   ```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+4. **Open your browser**
+   - Navigate to `http://localhost:5173`
+   - The application will be ready to use!
 
-### `npm run build`
+### Demo Accounts (for testing)
+- **Student**: demo.student@nus.edu.sg / DemoStudent123
+- **Vendor**: demo.vendor@nus.edu.sg / DemoVendor123
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## ✨ Key Features
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### For Students
+- **Real-time Queue Viewing**: See current queue lengths and estimated wait times
+- **Smart Filtering**: Filter by food category, location, or preferences  
+- **Intelligent Sorting**: Sort by wait time, queue length, or stall name
+- **Mobile Responsive**: Works perfectly on phones and tablets
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### For Vendors
+- **Easy Queue Updates**: Simple +/- buttons to update queue length
+- **Stall Status Control**: Toggle open/closed status instantly
+- **Real-time Sync**: Updates appear immediately on student dashboards
+- **Quick Actions**: Bulk queue adjustments and reset options
 
-### `npm run eject`
+## 🏗️ Architecture
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Frontend/Backend Separation
+- **Frontend**: React application with TypeScript
+- **Backend**: Firebase services for authentication and real-time data
+  - Firebase Authentication for user management
+  - Firebase Firestore for user profiles and static data
+  - Firebase Realtime Database for live queue updates
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+This follows modern industry standards where Firebase serves as a complete backend-as-a-service solution.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 🔧 Technical Stack
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- **Frontend**: React 18 + TypeScript + Tailwind CSS
+- **Backend**: Firebase (Authentication + Firestore + Realtime Database)
+- **Build Tool**: Vite
+- **UI Components**: Custom components with Tailwind CSS
+- **Real-time Updates**: Firebase Realtime Database with WebSocket connections
 
-## Learn More
+## 📱 Application Flow
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Student Experience:
+1. **Login** with student credentials
+2. **View Dashboard** showing all available stalls
+3. **Filter & Sort** stalls by preferences
+4. **Check Queue Status** with real-time updates
+5. **Make Informed Decisions** about where to eat
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Vendor Experience:
+1. **Login** with vendor credentials
+2. **Access Vendor Dashboard** for stall management
+3. **Update Queue Length** using simple controls
+4. **Toggle Stall Status** (open/closed)
+5. **Monitor Real-time Updates** reflected to students
 
-### Code Splitting
+## 🎯 Project Goals
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+NUSmartQueue addresses the common problem of unpredictable queue lengths at NUS canteens by:
 
-### Analyzing the Bundle Size
+1. **Reducing Wait Times**: Students can choose less crowded stalls
+2. **Improving Efficiency**: Vendors can manage customer flow better
+3. **Enhancing Experience**: Real-time information leads to better dining decisions
+4. **Supporting Campus Life**: Helps students optimize their meal timing
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## 🔐 Security & Privacy
 
-### Making a Progressive Web App
+- Secure authentication with Firebase Auth
+- Role-based access control (students vs vendors)
+- Data validation and sanitization
+- Privacy-compliant user data handling
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## 📊 Future Enhancements
 
-### Advanced Configuration
+- **Predictive Analytics**: ML models to predict queue patterns
+- **Push Notifications**: Real-time alerts for queue changes
+- **Location Integration**: GPS-based recommendations
+- **Advanced Analytics**: Vendor insights and business intelligence
+- **Social Features**: Reviews and ratings system
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## 🛠️ Development
 
-### Deployment
+### Project Structure
+```
+src/
+├── components/          # React components
+│   ├── Home.tsx        # Landing page
+│   ├── Login.tsx       # Authentication
+│   ├── SignUp.tsx      # User registration
+│   ├── StudentDashboard.tsx  # Student interface
+│   └── VendorDashboard.tsx   # Vendor interface
+├── firebase.ts         # Firebase configuration
+├── App.tsx            # Main application component
+└── main.tsx           # Application entry point
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### Available Scripts
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
 
-### `npm run build` fails to minify
+### Firebase Configuration
+The application includes pre-configured Firebase settings for development and testing. For production deployment, update the Firebase configuration in `src/firebase.ts` with your own Firebase project credentials.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## 🤝 Contributing
+
+This project was developed as part of NUS Orbital 2025. For questions or contributions, please contact the development team.
+
+## 📞 Support
+
+For technical issues or questions:
+1. Check that all dependencies are installed correctly
+2. Ensure Node.js version 16+ is being used
+3. Verify the development server is running on the correct port
+4. Use the provided demo credentials for testing
+
+## 🎓 Academic Context
+
+This project demonstrates:
+- Modern web development practices
+- Real-time application architecture
+- User experience design
+- Database design and management
+- Authentication and authorization
+- Responsive web design principles
+
+---
+
+**Note**: This application includes demo data and configurations for educational and testing purposes. The Firebase configuration is set up for development use.
+
