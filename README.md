@@ -2,7 +2,7 @@
 
 A real-time queue management system for NUS canteens that helps students avoid long queues and enables vendors to manage their stall status efficiently.
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Node.js (version 16 or higher)
@@ -34,7 +34,7 @@ A real-time queue management system for NUS canteens that helps students avoid l
 - **Student**: demo.student@nus.edu.sg / DemoStudent123
 - **Vendor**: demo.vendor@nus.edu.sg / DemoVendor123
 
-## ✨ Key Features
+## Key Features
 
 ### For Students
 - **Real-time Queue Viewing**: See current queue lengths and estimated wait times
@@ -48,7 +48,7 @@ A real-time queue management system for NUS canteens that helps students avoid l
 - **Real-time Sync**: Updates appear immediately on student dashboards
 - **Quick Actions**: Bulk queue adjustments and reset options
 
-## 🏗️ Architecture
+## Architecture
 
 ### Frontend/Backend Separation
 - **Frontend**: React application with TypeScript
@@ -59,7 +59,7 @@ A real-time queue management system for NUS canteens that helps students avoid l
 
 This follows modern industry standards where Firebase serves as a complete backend-as-a-service solution.
 
-## 🔧 Technical Stack
+## Technical Stack
 
 - **Frontend**: React 18 + TypeScript + Tailwind CSS
 - **Backend**: Firebase (Authentication + Firestore + Realtime Database)
@@ -67,7 +67,7 @@ This follows modern industry standards where Firebase serves as a complete backe
 - **UI Components**: Custom components with Tailwind CSS
 - **Real-time Updates**: Firebase Realtime Database with WebSocket connections
 
-## 📱 Application Flow
+## Application Flow
 
 ### Student Experience:
 1. **Login** with student credentials
@@ -83,7 +83,7 @@ This follows modern industry standards where Firebase serves as a complete backe
 4. **Toggle Stall Status** (open/closed)
 5. **Monitor Real-time Updates** reflected to students
 
-## 🎯 Project Goals
+##  Project Goals
 
 NUSmartQueue addresses the common problem of unpredictable queue lengths at NUS canteens by:
 
@@ -92,14 +92,14 @@ NUSmartQueue addresses the common problem of unpredictable queue lengths at NUS 
 3. **Enhancing Experience**: Real-time information leads to better dining decisions
 4. **Supporting Campus Life**: Helps students optimize their meal timing
 
-## 🔐 Security & Privacy
+##  Security & Privacy
 
 - Secure authentication with Firebase Auth
 - Role-based access control (students vs vendors)
 - Data validation and sanitization
 - Privacy-compliant user data handling
 
-## 📊 Future Enhancements
+##  Future Enhancements
 
 - **Predictive Analytics**: ML models to predict queue patterns
 - **Push Notifications**: Real-time alerts for queue changes
@@ -107,7 +107,7 @@ NUSmartQueue addresses the common problem of unpredictable queue lengths at NUS 
 - **Advanced Analytics**: Vendor insights and business intelligence
 - **Social Features**: Reviews and ratings system
 
-## 🛠️ Development
+## Development
 
 ### Project Structure
 ```
@@ -132,29 +132,10 @@ src/
 ### Firebase Configuration
 The application includes pre-configured Firebase settings for development and testing. For production deployment, update the Firebase configuration in `src/firebase.ts` with your own Firebase project credentials.
 
-## 🤝 Contributing
+## Contributing
 
 This project was developed as part of NUS Orbital 2025. For questions or contributions, please contact the development team.
 
-## 📞 Support
-
-For technical issues or questions:
-1. Check that all dependencies are installed correctly
-2. Ensure Node.js version 16+ is being used
-3. Verify the development server is running on the correct port
-4. Use the provided demo credentials for testing
-
-## 🎓 Academic Context
-
-This project demonstrates:
-- Modern web development practices
-- Real-time application architecture
-- User experience design
-- Database design and management
-- Authentication and authorization
-- Responsive web design principles
-
----
 
 **Note**: This application includes demo data and configurations for educational and testing purposes. The Firebase configuration is set up for development use.
 
