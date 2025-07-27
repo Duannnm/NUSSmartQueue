@@ -1,66 +1,109 @@
-import { useState, useEffect } from 'react';
-import { auth } from './firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import React, { useState } from 'react';
 import './App.css';
+
+// Import existing components
 import Home from './components/Home';
 import Login from './components/Login';
 import SignUp from './components/SignUp';
 import StudentDashboard from './components/StudentDashboard';
 import VendorDashboard from './components/VendorDashboard';
+import EnhancedStudentDashboard from './components/EnhancedStudentDashboard';
+import CanteenDetails from './components/CanteenDetails';
+import ErrorBoundary from './components/ErrorBoundary';
 
-type Page = 'home' | 'login' | 'signup' | 'student-dashboard' | 'vendor-dashboard';
+// Simple notification state
+interface Notification {
+  id: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  title: string;
+  message?: string;
+}
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('home');
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState('home');
+  const [selectedCanteen, setSelectedCanteen] = useState(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      if (user) {
-        // In a real app, you'd fetch the user role from Firestore
-        // For demo purposes, we'll use a simple check
-        const role = user.email?.includes('vendor') ? 'vendor' : 'student';
-        setCurrentPage(role === 'vendor' ? 'vendor-dashboard' : 'student-dashboard');
-      } else {
-        setCurrentPage('home');
-      }
-      setLoading(false);
-    });
+  const navigate = (page: string, data?: any) => {
+    setCurrentPage(page);
+    if (data) {
+      setSelectedCanteen(data);
+    }
+  };
 
-    return () => unsubscribe();
-  }, []);
+  const addNotification = (notification: Omit<Notification, 'id'>) => {
+    const id = Date.now().toString();
+    setNotifications(prev => [...prev, { ...notification, id }]);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 5000);
+  };
 
-  if (loading) {
-    return (
-      <div className="app-container flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
-  }
+  const removeNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
 
   const renderPage = () => {
     switch (currentPage) {
-      case 'home':
-        return <Home onNavigate={(page) => setCurrentPage(page as Page)} />;
       case 'login':
-        return <Login onNavigate={(page) => setCurrentPage(page as Page)} />;
+        return <Login onNavigate={navigate} />;
       case 'signup':
-        return <SignUp onNavigate={(page) => setCurrentPage(page as Page)} />;
+        return <SignUp onNavigate={navigate} />;
       case 'student-dashboard':
-        return <StudentDashboard onNavigate={(page) => setCurrentPage(page as Page)} user={user} />;
+        return <EnhancedStudentDashboard onNavigate={navigate} />;
       case 'vendor-dashboard':
-        return <VendorDashboard onNavigate={(page) => setCurrentPage(page as Page)} user={user} />;
+        return <VendorDashboard onNavigate={navigate} />;
+      case 'canteen-details':
+        return selectedCanteen ? (
+          <CanteenDetails canteen={selectedCanteen} onNavigate={navigate} />
+        ) : (
+          <Home onNavigate={navigate} />
+        );
       default:
-        return <Home onNavigate={(page) => setCurrentPage(page as Page)} />;
+        return <Home onNavigate={navigate} />;
     }
   };
 
   return (
-    <div className="app-container">
-      {renderPage()}
-    </div>
+    <ErrorBoundary>
+      <div className="App">
+        {renderPage()}
+        
+        {/* Simple notification display */}
+        {notifications.length > 0 && (
+          <div className="fixed top-4 right-4 z-50 space-y-2">
+            {notifications.map(notification => (
+              <div
+                key={notification.id}
+                className={`p-4 rounded-lg shadow-lg max-w-sm ${
+                  notification.type === 'success' ? 'bg-green-500 text-white' :
+                  notification.type === 'error' ? 'bg-red-500 text-white' :
+                  notification.type === 'warning' ? 'bg-yellow-500 text-white' :
+                  'bg-blue-500 text-white'
+                }`}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-semibold">{notification.title}</h4>
+                    {notification.message && (
+                      <p className="text-sm mt-1">{notification.message}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => removeNotification(notification.id)}
+                    className="ml-2 text-white hover:text-gray-200"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }
 

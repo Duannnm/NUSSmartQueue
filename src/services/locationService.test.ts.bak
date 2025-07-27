@@ -1,0 +1,277 @@
+import { 
+  getCurrentLocation, 
+  calculateDistance, 
+  findNearbyCanteens, 
+  getIndoorPosition,
+  LocationService 
+} from './locationService';
+
+// Mock geolocation API
+const mockGeolocation = {
+  getCurrentPosition: jest.fn(),
+  watchPosition: jest.fn(),
+  clearWatch: jest.fn(),
+};
+
+Object.defineProperty(global.navigator, 'geolocation', {
+  value: mockGeolocation,
+  writable: true,
+});
+
+describe('LocationService', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('getCurrentLocation', () => {
+    it('should return current position successfully', async () => {
+      const mockPosition = {
+        coords: {
+          latitude: 1.2966,
+          longitude: 103.7764,
+          accuracy: 10,
+        },
+        timestamp: Date.now(),
+      };
+
+      mockGeolocation.getCurrentPosition.mockImplementation((success) => {
+        success(mockPosition);
+      });
+
+      const result = await getCurrentLocation();
+      
+      expect(result).toEqual({
+        latitude: 1.2966,
+        longitude: 103.7764,
+        accuracy: 10,
+      });
+    });
+
+    it('should handle geolocation error', async () => {
+      const mockError = {
+        code: 1,
+        message: 'User denied geolocation',
+      };
+
+      mockGeolocation.getCurrentPosition.mockImplementation((success, error) => {
+        error(mockError);
+      });
+
+      await expect(getCurrentLocation()).rejects.toThrow('User denied geolocation');
+    });
+
+    it('should handle timeout error', async () => {
+      mockGeolocation.getCurrentPosition.mockImplementation(() => {
+        // Simulate timeout by not calling success or error
+      });
+
+      const promise = getCurrentLocation();
+      
+      // Fast-forward time to trigger timeout
+      jest.advanceTimersByTime(10000);
+      
+      await expect(promise).rejects.toThrow();
+    });
+  });
+
+  describe('calculateDistance', () => {
+    it('should calculate distance between two points correctly', () => {
+      const point1 = { latitude: 1.2966, longitude: 103.7764 }; // NUS
+      const point2 = { latitude: 1.2976, longitude: 103.7774 }; // Nearby point
+      
+      const distance = calculateDistance(point1, point2);
+      
+      expect(distance).toBeGreaterThan(0);
+      expect(distance).toBeLessThan(1); // Should be less than 1km
+    });
+
+    it('should return 0 for same coordinates', () => {
+      const point = { latitude: 1.2966, longitude: 103.7764 };
+      
+      const distance = calculateDistance(point, point);
+      
+      expect(distance).toBe(0);
+    });
+
+    it('should handle edge cases', () => {
+      const point1 = { latitude: 0, longitude: 0 };
+      const point2 = { latitude: 90, longitude: 180 };
+      
+      const distance = calculateDistance(point1, point2);
+      
+      expect(distance).toBeGreaterThan(0);
+      expect(typeof distance).toBe('number');
+    });
+  });
+
+  describe('findNearbyCanteens', () => {
+    const mockCanteens = [
+      {
+        id: '1',
+        name: 'COM2 Canteen',
+        location: { latitude: 1.2945, longitude: 103.7737 },
+        address: 'COM2, NUS',
+      },
+      {
+        id: '2',
+        name: 'Arts Canteen',
+        location: { latitude: 1.2970, longitude: 103.7720 },
+        address: 'Arts Building, NUS',
+      },
+      {
+        id: '3',
+        name: 'Far Canteen',
+        location: { latitude: 1.3500, longitude: 103.8000 },
+        address: 'Far Location',
+      },
+    ];
+
+    it('should find nearby canteens within radius', () => {
+      const userLocation = { latitude: 1.2966, longitude: 103.7764 };
+      const radius = 5; // 5km
+      
+      const nearby = findNearbyCanteens(userLocation, mockCanteens, radius);
+      
+      expect(nearby).toHaveLength(2); // Should exclude the far canteen
+      expect(nearby[0].name).toBe('COM2 Canteen');
+      expect(nearby[1].name).toBe('Arts Canteen');
+    });
+
+    it('should sort canteens by distance', () => {
+      const userLocation = { latitude: 1.2966, longitude: 103.7764 };
+      const radius = 10;
+      
+      const nearby = findNearbyCanteens(userLocation, mockCanteens, radius);
+      
+      // Should be sorted by distance (closest first)
+      for (let i = 1; i < nearby.length; i++) {
+        expect(nearby[i-1].distance).toBeLessThanOrEqual(nearby[i].distance);
+      }
+    });
+
+    it('should return empty array when no canteens are nearby', () => {
+      const userLocation = { latitude: 1.2966, longitude: 103.7764 };
+      const radius = 0.001; // Very small radius
+      
+      const nearby = findNearbyCanteens(userLocation, mockCanteens, radius);
+      
+      expect(nearby).toHaveLength(0);
+    });
+  });
+
+  describe('getIndoorPosition', () => {
+    it('should return indoor position with WiFi data', async () => {
+      const mockWiFiData = [
+        { ssid: 'NUS_WiFi_1', strength: -30 },
+        { ssid: 'NUS_WiFi_2', strength: -45 },
+      ];
+      
+      const position = await getIndoorPosition(mockWiFiData);
+      
+      expect(position).toHaveProperty('latitude');
+      expect(position).toHaveProperty('longitude');
+      expect(position).toHaveProperty('accuracy');
+      expect(position).toHaveProperty('floor');
+      expect(position).toHaveProperty('building');
+    });
+
+    it('should handle empty WiFi data', async () => {
+      const position = await getIndoorPosition([]);
+      
+      expect(position).toHaveProperty('latitude');
+      expect(position).toHaveProperty('longitude');
+      expect(position.accuracy).toBeGreaterThan(50); // Lower accuracy
+    });
+
+    it('should simulate different buildings based on WiFi', async () => {
+      const com2WiFi = [{ ssid: 'COM2_WiFi', strength: -25 }];
+      const artsWiFi = [{ ssid: 'Arts_WiFi', strength: -25 }];
+      
+      const com2Position = await getIndoorPosition(com2WiFi);
+      const artsPosition = await getIndoorPosition(artsWiFi);
+      
+      expect(com2Position.building).toBe('COM2');
+      expect(artsPosition.building).toBe('Arts');
+    });
+  });
+
+  describe('LocationService class', () => {
+    let locationService: LocationService;
+
+    beforeEach(() => {
+      locationService = new LocationService();
+    });
+
+    it('should start location tracking', async () => {
+      const mockPosition = {
+        coords: {
+          latitude: 1.2966,
+          longitude: 103.7764,
+          accuracy: 10,
+        },
+        timestamp: Date.now(),
+      };
+
+      mockGeolocation.watchPosition.mockImplementation((success) => {
+        success(mockPosition);
+        return 1; // watchId
+      });
+
+      const callback = jest.fn();
+      await locationService.startTracking(callback);
+      
+      expect(mockGeolocation.watchPosition).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalledWith({
+        latitude: 1.2966,
+        longitude: 103.7764,
+        accuracy: 10,
+      });
+    });
+
+    it('should stop location tracking', () => {
+      locationService.stopTracking();
+      
+      expect(mockGeolocation.clearWatch).toHaveBeenCalled();
+    });
+
+    it('should get current location', async () => {
+      const mockPosition = {
+        coords: {
+          latitude: 1.2966,
+          longitude: 103.7764,
+          accuracy: 10,
+        },
+        timestamp: Date.now(),
+      };
+
+      mockGeolocation.getCurrentPosition.mockImplementation((success) => {
+        success(mockPosition);
+      });
+
+      const location = await locationService.getCurrentLocation();
+      
+      expect(location).toEqual({
+        latitude: 1.2966,
+        longitude: 103.7764,
+        accuracy: 10,
+      });
+    });
+
+    it('should calculate walking time', () => {
+      const distance = 0.5; // 500 meters
+      const walkingTime = locationService.calculateWalkingTime(distance);
+      
+      expect(walkingTime).toBeGreaterThan(0);
+      expect(typeof walkingTime).toBe('number');
+    });
+
+    it('should determine if location is indoor', () => {
+      const indoorLocation = { latitude: 1.2966, longitude: 103.7764, accuracy: 5 };
+      const outdoorLocation = { latitude: 1.2966, longitude: 103.7764, accuracy: 50 };
+      
+      expect(locationService.isIndoor(indoorLocation)).toBe(true);
+      expect(locationService.isIndoor(outdoorLocation)).toBe(false);
+    });
+  });
+});
+

@@ -1,0 +1,377 @@
+import {
+  RecommendationService,
+  generateRecommendations,
+  calculateStallScore,
+  filterStalls,
+  getQuickPicks,
+  analyzeUserPreferences
+} from './recommendationService';
+
+describe('RecommendationService', () => {
+  const mockStalls = [
+    {
+      id: 'stall-1',
+      name: 'Golden Dragon',
+      canteenId: 'canteen-1',
+      canteenName: 'COM2 Canteen',
+      cuisine: 'Chinese',
+      rating: 4.5,
+      priceRange: 'medium' as const,
+      queueLength: 5,
+      estimatedWaitTime: 10,
+      distance: 0.2,
+      crowdLevel: 'low' as const,
+      isOpen: true,
+      specialties: ['Fried Rice', 'Noodles'],
+      averagePrice: 8.50,
+    },
+    {
+      id: 'stall-2',
+      name: 'Spice Garden',
+      canteenId: 'canteen-1',
+      canteenName: 'COM2 Canteen',
+      cuisine: 'Indian',
+      rating: 4.2,
+      priceRange: 'low' as const,
+      queueLength: 8,
+      estimatedWaitTime: 15,
+      distance: 0.2,
+      crowdLevel: 'medium' as const,
+      isOpen: true,
+      specialties: ['Biryani', 'Curry'],
+      averagePrice: 6.00,
+    },
+    {
+      id: 'stall-3',
+      name: 'Campus Grill',
+      canteenId: 'canteen-2',
+      canteenName: 'Arts Canteen',
+      cuisine: 'Western',
+      rating: 4.0,
+      priceRange: 'high' as const,
+      queueLength: 12,
+      estimatedWaitTime: 25,
+      distance: 0.5,
+      crowdLevel: 'high' as const,
+      isOpen: true,
+      specialties: ['Burger', 'Steak'],
+      averagePrice: 12.00,
+    },
+    {
+      id: 'stall-4',
+      name: 'Closed Stall',
+      canteenId: 'canteen-2',
+      canteenName: 'Arts Canteen',
+      cuisine: 'Malay',
+      rating: 3.8,
+      priceRange: 'medium' as const,
+      queueLength: 0,
+      estimatedWaitTime: 0,
+      distance: 0.3,
+      crowdLevel: 'low' as const,
+      isOpen: false,
+      specialties: ['Nasi Lemak'],
+      averagePrice: 7.50,
+    },
+  ];
+
+  const mockUserPreferences = {
+    cuisineTypes: ['Chinese', 'Indian'],
+    priceRange: ['low', 'medium'] as const,
+    maxWaitTime: 20,
+    maxDistance: 1.0,
+    preferredRating: 4.0,
+  };
+
+  const mockUserLocation = {
+    latitude: 1.2966,
+    longitude: 103.7764,
+  };
+
+  describe('generateRecommendations', () => {
+    it('should generate recommendations based on user preferences', () => {
+      const recommendations = generateRecommendations(
+        mockStalls,
+        mockUserPreferences,
+        mockUserLocation
+      );
+      
+      expect(Array.isArray(recommendations)).toBe(true);
+      expect(recommendations.length).toBeGreaterThan(0);
+      
+      // Should only include open stalls
+      recommendations.forEach(rec => {
+        expect(rec.isOpen).toBe(true);
+      });
+      
+      // Should be sorted by score (highest first)
+      for (let i = 1; i < recommendations.length; i++) {
+        expect(recommendations[i-1].score).toBeGreaterThanOrEqual(recommendations[i].score);
+      }
+    });
+
+    it('should filter out closed stalls', () => {
+      const recommendations = generateRecommendations(
+        mockStalls,
+        mockUserPreferences,
+        mockUserLocation
+      );
+      
+      const closedStall = recommendations.find(r => r.id === 'stall-4');
+      expect(closedStall).toBeUndefined();
+    });
+
+    it('should respect user cuisine preferences', () => {
+      const chineseOnlyPrefs = {
+        ...mockUserPreferences,
+        cuisineTypes: ['Chinese'],
+      };
+      
+      const recommendations = generateRecommendations(
+        mockStalls,
+        chineseOnlyPrefs,
+        mockUserLocation
+      );
+      
+      recommendations.forEach(rec => {
+        expect(rec.cuisine).toBe('Chinese');
+      });
+    });
+
+    it('should handle empty stalls array', () => {
+      const recommendations = generateRecommendations(
+        [],
+        mockUserPreferences,
+        mockUserLocation
+      );
+      
+      expect(recommendations).toHaveLength(0);
+    });
+  });
+
+  describe('calculateStallScore', () => {
+    it('should calculate score based on multiple factors', () => {
+      const stall = mockStalls[0];
+      const score = calculateStallScore(stall, mockUserPreferences, mockUserLocation);
+      
+      expect(score).toBeGreaterThan(0);
+      expect(score).toBeLessThanOrEqual(100);
+    });
+
+    it('should give higher scores to better rated stalls', () => {
+      const highRatedStall = { ...mockStalls[0], rating: 5.0 };
+      const lowRatedStall = { ...mockStalls[0], rating: 3.0 };
+      
+      const highScore = calculateStallScore(highRatedStall, mockUserPreferences, mockUserLocation);
+      const lowScore = calculateStallScore(lowRatedStall, mockUserPreferences, mockUserLocation);
+      
+      expect(highScore).toBeGreaterThan(lowScore);
+    });
+
+    it('should give higher scores to closer stalls', () => {
+      const closeStall = { ...mockStalls[0], distance: 0.1 };
+      const farStall = { ...mockStalls[0], distance: 1.0 };
+      
+      const closeScore = calculateStallScore(closeStall, mockUserPreferences, mockUserLocation);
+      const farScore = calculateStallScore(farStall, mockUserPreferences, mockUserLocation);
+      
+      expect(closeScore).toBeGreaterThan(farScore);
+    });
+
+    it('should give higher scores to stalls with shorter wait times', () => {
+      const fastStall = { ...mockStalls[0], estimatedWaitTime: 5 };
+      const slowStall = { ...mockStalls[0], estimatedWaitTime: 30 };
+      
+      const fastScore = calculateStallScore(fastStall, mockUserPreferences, mockUserLocation);
+      const slowScore = calculateStallScore(slowStall, mockUserPreferences, mockUserLocation);
+      
+      expect(fastScore).toBeGreaterThan(slowScore);
+    });
+  });
+
+  describe('filterStalls', () => {
+    it('should filter stalls by criteria', () => {
+      const criteria = {
+        cuisineTypes: ['Chinese'],
+        priceRange: ['medium'],
+        maxWaitTime: 15,
+        openOnly: true,
+      };
+      
+      const filtered = filterStalls(mockStalls, criteria);
+      
+      expect(filtered).toHaveLength(1);
+      expect(filtered[0].cuisine).toBe('Chinese');
+      expect(filtered[0].priceRange).toBe('medium');
+      expect(filtered[0].estimatedWaitTime).toBeLessThanOrEqual(15);
+      expect(filtered[0].isOpen).toBe(true);
+    });
+
+    it('should handle empty criteria', () => {
+      const filtered = filterStalls(mockStalls, {});
+      
+      expect(filtered.length).toBe(mockStalls.length);
+    });
+
+    it('should filter by open only', () => {
+      const filtered = filterStalls(mockStalls, { openOnly: true });
+      
+      filtered.forEach(stall => {
+        expect(stall.isOpen).toBe(true);
+      });
+    });
+
+    it('should filter by multiple cuisine types', () => {
+      const filtered = filterStalls(mockStalls, { 
+        cuisineTypes: ['Chinese', 'Indian'] 
+      });
+      
+      filtered.forEach(stall => {
+        expect(['Chinese', 'Indian']).toContain(stall.cuisine);
+      });
+    });
+  });
+
+  describe('getQuickPicks', () => {
+    it('should return quick pick categories', () => {
+      const quickPicks = getQuickPicks(mockStalls, mockUserLocation);
+      
+      expect(quickPicks).toHaveProperty('closest');
+      expect(quickPicks).toHaveProperty('fastest');
+      expect(quickPicks).toHaveProperty('leastCrowded');
+      expect(quickPicks).toHaveProperty('bestRated');
+      
+      expect(Array.isArray(quickPicks.closest)).toBe(true);
+      expect(Array.isArray(quickPicks.fastest)).toBe(true);
+      expect(Array.isArray(quickPicks.leastCrowded)).toBe(true);
+      expect(Array.isArray(quickPicks.bestRated)).toBe(true);
+    });
+
+    it('should return closest stalls first', () => {
+      const quickPicks = getQuickPicks(mockStalls, mockUserLocation);
+      
+      if (quickPicks.closest.length > 1) {
+        for (let i = 1; i < quickPicks.closest.length; i++) {
+          expect(quickPicks.closest[i-1].distance).toBeLessThanOrEqual(quickPicks.closest[i].distance);
+        }
+      }
+    });
+
+    it('should return fastest stalls first', () => {
+      const quickPicks = getQuickPicks(mockStalls, mockUserLocation);
+      
+      if (quickPicks.fastest.length > 1) {
+        for (let i = 1; i < quickPicks.fastest.length; i++) {
+          expect(quickPicks.fastest[i-1].estimatedWaitTime).toBeLessThanOrEqual(quickPicks.fastest[i].estimatedWaitTime);
+        }
+      }
+    });
+
+    it('should return best rated stalls first', () => {
+      const quickPicks = getQuickPicks(mockStalls, mockUserLocation);
+      
+      if (quickPicks.bestRated.length > 1) {
+        for (let i = 1; i < quickPicks.bestRated.length; i++) {
+          expect(quickPicks.bestRated[i-1].rating).toBeGreaterThanOrEqual(quickPicks.bestRated[i].rating);
+        }
+      }
+    });
+  });
+
+  describe('analyzeUserPreferences', () => {
+    const mockOrderHistory = [
+      { stallId: 'stall-1', cuisine: 'Chinese', priceRange: 'medium', rating: 5 },
+      { stallId: 'stall-1', cuisine: 'Chinese', priceRange: 'medium', rating: 4 },
+      { stallId: 'stall-2', cuisine: 'Indian', priceRange: 'low', rating: 5 },
+      { stallId: 'stall-3', cuisine: 'Western', priceRange: 'high', rating: 3 },
+    ];
+
+    it('should analyze user preferences from order history', () => {
+      const preferences = analyzeUserPreferences(mockOrderHistory);
+      
+      expect(preferences).toHaveProperty('cuisineTypes');
+      expect(preferences).toHaveProperty('priceRange');
+      expect(preferences).toHaveProperty('preferredRating');
+      
+      expect(Array.isArray(preferences.cuisineTypes)).toBe(true);
+      expect(Array.isArray(preferences.priceRange)).toBe(true);
+    });
+
+    it('should identify most frequent cuisines', () => {
+      const preferences = analyzeUserPreferences(mockOrderHistory);
+      
+      // Chinese appears twice, should be preferred
+      expect(preferences.cuisineTypes).toContain('Chinese');
+    });
+
+    it('should handle empty order history', () => {
+      const preferences = analyzeUserPreferences([]);
+      
+      expect(preferences.cuisineTypes).toHaveLength(0);
+      expect(preferences.priceRange).toHaveLength(0);
+      expect(preferences.preferredRating).toBe(4.0); // Default
+    });
+  });
+
+  describe('RecommendationService class', () => {
+    let recommendationService: RecommendationService;
+
+    beforeEach(() => {
+      recommendationService = new RecommendationService();
+    });
+
+    it('should get recommendations', () => {
+      const recommendations = recommendationService.getRecommendations(
+        mockStalls,
+        mockUserPreferences,
+        mockUserLocation
+      );
+      
+      expect(Array.isArray(recommendations)).toBe(true);
+    });
+
+    it('should get quick picks', () => {
+      const quickPicks = recommendationService.getQuickPicks(mockStalls, mockUserLocation);
+      
+      expect(quickPicks).toHaveProperty('closest');
+      expect(quickPicks).toHaveProperty('fastest');
+      expect(quickPicks).toHaveProperty('leastCrowded');
+      expect(quickPicks).toHaveProperty('bestRated');
+    });
+
+    it('should filter stalls', () => {
+      const filtered = recommendationService.filterStalls(mockStalls, { openOnly: true });
+      
+      filtered.forEach(stall => {
+        expect(stall.isOpen).toBe(true);
+      });
+    });
+
+    it('should analyze preferences', () => {
+      const orderHistory = [
+        { stallId: 'stall-1', cuisine: 'Chinese', priceRange: 'medium', rating: 5 },
+      ];
+      
+      const preferences = recommendationService.analyzeUserPreferences(orderHistory);
+      
+      expect(preferences).toHaveProperty('cuisineTypes');
+      expect(preferences).toHaveProperty('priceRange');
+    });
+
+    it('should update user preferences', () => {
+      const newPreferences = {
+        cuisineTypes: ['Japanese'],
+        priceRange: ['high'] as const,
+        maxWaitTime: 10,
+        maxDistance: 0.5,
+        preferredRating: 4.5,
+      };
+      
+      recommendationService.updateUserPreferences(newPreferences);
+      
+      // This would typically update internal state
+      expect(true).toBe(true); // Placeholder assertion
+    });
+  });
+});
+

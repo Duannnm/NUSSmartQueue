@@ -1,0 +1,263 @@
+import {
+  AnalyticsService,
+  generateVendorAnalytics,
+  calculatePerformanceMetrics,
+  generateInsights,
+  getHourlyTrends,
+  getDailyAnalysis
+} from './analyticsService';
+
+describe('AnalyticsService', () => {
+  const mockVendorData = {
+    vendorId: 'vendor-1',
+    name: 'Test Vendor',
+    queueData: [
+      { timestamp: new Date('2024-01-01T09:00:00'), queueLength: 5, waitTime: 10 },
+      { timestamp: new Date('2024-01-01T10:00:00'), queueLength: 8, waitTime: 15 },
+      { timestamp: new Date('2024-01-01T11:00:00'), queueLength: 12, waitTime: 25 },
+      { timestamp: new Date('2024-01-01T12:00:00'), queueLength: 15, waitTime: 30 },
+      { timestamp: new Date('2024-01-01T13:00:00'), queueLength: 10, waitTime: 20 },
+    ],
+    salesData: [
+      { timestamp: new Date('2024-01-01T09:00:00'), amount: 100, orders: 10 },
+      { timestamp: new Date('2024-01-01T10:00:00'), amount: 150, orders: 15 },
+      { timestamp: new Date('2024-01-01T11:00:00'), amount: 200, orders: 20 },
+      { timestamp: new Date('2024-01-01T12:00:00'), amount: 250, orders: 25 },
+      { timestamp: new Date('2024-01-01T13:00:00'), amount: 180, orders: 18 },
+    ],
+    customerData: [
+      { timestamp: new Date('2024-01-01T09:00:00'), count: 12, satisfaction: 4.2 },
+      { timestamp: new Date('2024-01-01T10:00:00'), count: 18, satisfaction: 4.0 },
+      { timestamp: new Date('2024-01-01T11:00:00'), count: 25, satisfaction: 3.8 },
+      { timestamp: new Date('2024-01-01T12:00:00'), count: 30, satisfaction: 3.5 },
+      { timestamp: new Date('2024-01-01T13:00:00'), count: 22, satisfaction: 4.1 },
+    ],
+  };
+
+  describe('generateVendorAnalytics', () => {
+    it('should generate comprehensive analytics for vendor', () => {
+      const analytics = generateVendorAnalytics(mockVendorData);
+      
+      expect(analytics).toHaveProperty('vendorId', 'vendor-1');
+      expect(analytics).toHaveProperty('name', 'Test Vendor');
+      expect(analytics).toHaveProperty('overview');
+      expect(analytics).toHaveProperty('hourlyTrends');
+      expect(analytics).toHaveProperty('dailyAnalysis');
+      expect(analytics).toHaveProperty('insights');
+      
+      // Check overview metrics
+      expect(analytics.overview.totalRevenue).toBe(880);
+      expect(analytics.overview.totalOrders).toBe(88);
+      expect(analytics.overview.averageOrderValue).toBeCloseTo(10, 1);
+      expect(analytics.overview.averageWaitTime).toBe(20);
+      expect(analytics.overview.averageQueueLength).toBe(10);
+      expect(analytics.overview.customerSatisfaction).toBeCloseTo(3.92, 1);
+    });
+
+    it('should handle empty data gracefully', () => {
+      const emptyData = {
+        vendorId: 'vendor-2',
+        name: 'Empty Vendor',
+        queueData: [],
+        salesData: [],
+        customerData: [],
+      };
+      
+      const analytics = generateVendorAnalytics(emptyData);
+      
+      expect(analytics.overview.totalRevenue).toBe(0);
+      expect(analytics.overview.totalOrders).toBe(0);
+      expect(analytics.overview.averageOrderValue).toBe(0);
+      expect(analytics.overview.averageWaitTime).toBe(0);
+      expect(analytics.overview.averageQueueLength).toBe(0);
+      expect(analytics.overview.customerSatisfaction).toBe(0);
+    });
+  });
+
+  describe('calculatePerformanceMetrics', () => {
+    it('should calculate correct performance metrics', () => {
+      const metrics = calculatePerformanceMetrics(mockVendorData);
+      
+      expect(metrics).toHaveProperty('efficiency');
+      expect(metrics).toHaveProperty('popularity');
+      expect(metrics).toHaveProperty('satisfaction');
+      expect(metrics).toHaveProperty('revenue');
+      
+      expect(metrics.efficiency).toBeGreaterThan(0);
+      expect(metrics.efficiency).toBeLessThanOrEqual(100);
+      expect(metrics.popularity).toBeGreaterThan(0);
+      expect(metrics.satisfaction).toBeGreaterThan(0);
+      expect(metrics.revenue).toBeGreaterThan(0);
+    });
+
+    it('should handle edge cases', () => {
+      const edgeData = {
+        ...mockVendorData,
+        queueData: [{ timestamp: new Date(), queueLength: 0, waitTime: 0 }],
+        salesData: [{ timestamp: new Date(), amount: 0, orders: 0 }],
+        customerData: [{ timestamp: new Date(), count: 0, satisfaction: 0 }],
+      };
+      
+      const metrics = calculatePerformanceMetrics(edgeData);
+      
+      expect(metrics.efficiency).toBe(100); // No wait time = perfect efficiency
+      expect(metrics.popularity).toBe(0);
+      expect(metrics.satisfaction).toBe(0);
+      expect(metrics.revenue).toBe(0);
+    });
+  });
+
+  describe('generateInsights', () => {
+    it('should generate meaningful insights', () => {
+      const insights = generateInsights(mockVendorData);
+      
+      expect(insights).toHaveProperty('peakHours');
+      expect(insights).toHaveProperty('recommendations');
+      expect(insights).toHaveProperty('trends');
+      expect(insights).toHaveProperty('comparisonWithPeers');
+      
+      expect(Array.isArray(insights.peakHours)).toBe(true);
+      expect(Array.isArray(insights.recommendations)).toBe(true);
+      expect(insights.trends).toHaveProperty('queueTrend');
+      expect(insights.trends).toHaveProperty('revenueTrend');
+      expect(insights.trends).toHaveProperty('satisfactionTrend');
+    });
+
+    it('should identify peak hours correctly', () => {
+      const insights = generateInsights(mockVendorData);
+      
+      // Peak hour should be 12:00 (highest queue length and revenue)
+      expect(insights.peakHours).toContain('12:00');
+    });
+
+    it('should provide relevant recommendations', () => {
+      const insights = generateInsights(mockVendorData);
+      
+      expect(insights.recommendations.length).toBeGreaterThan(0);
+      expect(typeof insights.recommendations[0]).toBe('string');
+    });
+  });
+
+  describe('getHourlyTrends', () => {
+    it('should return hourly trend data', () => {
+      const trends = getHourlyTrends(mockVendorData);
+      
+      expect(Array.isArray(trends)).toBe(true);
+      expect(trends.length).toBe(5); // 5 data points
+      
+      trends.forEach(trend => {
+        expect(trend).toHaveProperty('hour');
+        expect(trend).toHaveProperty('queueLength');
+        expect(trend).toHaveProperty('waitTime');
+        expect(trend).toHaveProperty('revenue');
+        expect(trend).toHaveProperty('orders');
+        expect(trend).toHaveProperty('customers');
+        expect(trend).toHaveProperty('satisfaction');
+      });
+    });
+
+    it('should format hours correctly', () => {
+      const trends = getHourlyTrends(mockVendorData);
+      
+      expect(trends[0].hour).toBe('09:00');
+      expect(trends[1].hour).toBe('10:00');
+      expect(trends[4].hour).toBe('13:00');
+    });
+  });
+
+  describe('getDailyAnalysis', () => {
+    it('should return daily analysis data', () => {
+      const analysis = getDailyAnalysis(mockVendorData);
+      
+      expect(analysis).toHaveProperty('date');
+      expect(analysis).toHaveProperty('totalRevenue');
+      expect(analysis).toHaveProperty('totalOrders');
+      expect(analysis).toHaveProperty('averageWaitTime');
+      expect(analysis).toHaveProperty('peakHour');
+      expect(analysis).toHaveProperty('customerCount');
+      expect(analysis).toHaveProperty('satisfactionScore');
+      
+      expect(analysis.totalRevenue).toBe(880);
+      expect(analysis.totalOrders).toBe(88);
+      expect(analysis.averageWaitTime).toBe(20);
+      expect(analysis.customerCount).toBe(107);
+    });
+
+    it('should identify correct peak hour', () => {
+      const analysis = getDailyAnalysis(mockVendorData);
+      
+      expect(analysis.peakHour).toBe('12:00');
+    });
+  });
+
+  describe('AnalyticsService class', () => {
+    let analyticsService: AnalyticsService;
+
+    beforeEach(() => {
+      analyticsService = new AnalyticsService();
+    });
+
+    it('should track queue data', () => {
+      const queueData = { queueLength: 5, waitTime: 10 };
+      
+      analyticsService.trackQueueData('vendor-1', queueData);
+      
+      const data = analyticsService.getVendorData('vendor-1');
+      expect(data.queueData).toHaveLength(1);
+      expect(data.queueData[0]).toMatchObject(queueData);
+    });
+
+    it('should track sales data', () => {
+      const salesData = { amount: 100, orders: 10 };
+      
+      analyticsService.trackSalesData('vendor-1', salesData);
+      
+      const data = analyticsService.getVendorData('vendor-1');
+      expect(data.salesData).toHaveLength(1);
+      expect(data.salesData[0]).toMatchObject(salesData);
+    });
+
+    it('should track customer data', () => {
+      const customerData = { count: 15, satisfaction: 4.5 };
+      
+      analyticsService.trackCustomerData('vendor-1', customerData);
+      
+      const data = analyticsService.getVendorData('vendor-1');
+      expect(data.customerData).toHaveLength(1);
+      expect(data.customerData[0]).toMatchObject(customerData);
+    });
+
+    it('should generate analytics for vendor', () => {
+      // Add some test data
+      analyticsService.trackQueueData('vendor-1', { queueLength: 5, waitTime: 10 });
+      analyticsService.trackSalesData('vendor-1', { amount: 100, orders: 10 });
+      analyticsService.trackCustomerData('vendor-1', { count: 15, satisfaction: 4.5 });
+      
+      const analytics = analyticsService.generateAnalytics('vendor-1');
+      
+      expect(analytics).toHaveProperty('vendorId', 'vendor-1');
+      expect(analytics).toHaveProperty('overview');
+      expect(analytics).toHaveProperty('hourlyTrends');
+      expect(analytics).toHaveProperty('dailyAnalysis');
+      expect(analytics).toHaveProperty('insights');
+    });
+
+    it('should handle non-existent vendor', () => {
+      const analytics = analyticsService.generateAnalytics('non-existent');
+      
+      expect(analytics.overview.totalRevenue).toBe(0);
+      expect(analytics.overview.totalOrders).toBe(0);
+    });
+
+    it('should clear data for vendor', () => {
+      analyticsService.trackQueueData('vendor-1', { queueLength: 5, waitTime: 10 });
+      analyticsService.clearVendorData('vendor-1');
+      
+      const data = analyticsService.getVendorData('vendor-1');
+      expect(data.queueData).toHaveLength(0);
+      expect(data.salesData).toHaveLength(0);
+      expect(data.customerData).toHaveLength(0);
+    });
+  });
+});
+
