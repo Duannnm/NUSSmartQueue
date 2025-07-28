@@ -15,7 +15,6 @@ import {
   Car
 } from 'lucide-react';
 import { useGeolocation } from '../hooks/useGeolocation';
-import { getRecommendations } from '../services/recommendationService';
 
 interface EnhancedStudentDashboardProps {
   onNavigate: (page: string, data?: any) => void;
@@ -45,10 +44,12 @@ interface Canteen {
 
 const EnhancedStudentDashboard: React.FC<EnhancedStudentDashboardProps> = ({ onNavigate }) => {
   const [canteens, setCanteens] = useState<Canteen[]>([]);
+  const [filteredCanteens, setFilteredCanteens] = useState<Canteen[]>([]);
   const [showFilters, setShowFilters] = useState(false);
-  const [isOnline, setIsOnline] = useState(true);
+  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
+  const [selectedCrowdLevels, setSelectedCrowdLevels] = useState<string[]>([]);
   const [locationFound, setLocationFound] = useState(false);
-  const { location, error: locationError } = useGeolocation();
+  const { location } = useGeolocation();
 
   useEffect(() => {
     // Simulate location found
@@ -100,54 +101,100 @@ const EnhancedStudentDashboard: React.FC<EnhancedStudentDashboardProps> = ({ onN
         amenities: ['WiFi', 'Air-conditioned']
       },
       {
+        id: 'business',
+        name: 'Business Canteen',
+        location: 'Business School',
+        level: 'Level 1',
+        cuisines: ['Japanese', 'Korean', 'Western'],
+        score: 68,
+        totalTime: '18m total',
+        queueTime: '12m queue',
+        travelTime: '6m travel',
+        peopleCount: 12,
+        crowdLevel: 'High',
+        walkingTime: '6 min walk',
+        distance: '500m away',
+        averagePrice: 6.2,
+        rating: 4.3,
+        status: ['Longer queue', 'Premium options'],
+        operating: '08:00 - 19:00',
+        amenities: ['WiFi', 'Air-conditioned', 'Study area']
+      },
+      {
         id: 'science',
         name: 'Science Canteen',
         location: 'Faculty of Science',
         level: 'Level 2',
-        cuisines: ['Chinese', 'Malay', 'Indian'],
-        score: 68,
-        totalTime: '21m total',
-        queueTime: '8m queue',
-        travelTime: '13m travel',
-        peopleCount: 5,
+        cuisines: ['Chinese', 'Malay', 'Indian', 'Western'],
+        score: 75,
+        totalTime: '12m total',
+        queueTime: '7m queue',
+        travelTime: '5m travel',
+        peopleCount: 6,
         crowdLevel: 'Low',
-        walkingTime: '13 min walk',
-        distance: '1093m away',
-        averagePrice: 4.8,
-        rating: 4.3,
-        status: ['Not crowded', 'Affordable', 'Air-conditioned'],
-        operating: '07:30 - 20:30',
-        amenities: ['Air-conditioned', 'WiFi', 'Vending machines']
-      },
-      {
-        id: 'utown',
-        name: 'UTown Food Court',
-        location: 'University Town',
-        level: 'Level 1',
-        cuisines: ['International', 'Western', 'Asian'],
-        score: 65,
-        totalTime: '30m total',
-        queueTime: '15m queue',
-        travelTime: '15m travel',
-        peopleCount: 10,
-        crowdLevel: 'Low',
-        walkingTime: '15 min walk',
-        distance: '1225m away',
-        averagePrice: 7.0,
-        rating: 4.4,
-        status: ['Not crowded', 'Air-conditioned'],
-        operating: '07:00 - 22:00',
-        amenities: ['Air-conditioned', 'WiFi', 'Wheelchair accessible', 'Late night dining']
+        walkingTime: '5 min walk',
+        distance: '400m away',
+        averagePrice: 4.0,
+        rating: 4.0,
+        status: ['Good value', 'Quick service'],
+        operating: '07:30 - 20:00',
+        amenities: ['WiFi']
       }
     ];
-
+    
     setCanteens(mockCanteens);
+    setFilteredCanteens(mockCanteens);
   }, [location]);
 
+  // Filter canteens based on selected criteria
+  useEffect(() => {
+    let filtered = canteens;
+
+    // Filter by cuisines
+    if (selectedCuisines.length > 0) {
+      filtered = filtered.filter(canteen =>
+        canteen.cuisines.some(cuisine => selectedCuisines.includes(cuisine))
+      );
+    }
+
+    // Filter by crowd levels
+    if (selectedCrowdLevels.length > 0) {
+      filtered = filtered.filter(canteen =>
+        selectedCrowdLevels.includes(canteen.crowdLevel)
+      );
+    }
+
+    setFilteredCanteens(filtered);
+  }, [canteens, selectedCuisines, selectedCrowdLevels]);
+
+  // Get unique cuisines and crowd levels for filter options
+  const allCuisines = [...new Set(canteens.flatMap(canteen => canteen.cuisines))];
+  const allCrowdLevels = [...new Set(canteens.map(canteen => canteen.crowdLevel))];
+
+  const handleCuisineFilter = (cuisine: string) => {
+    setSelectedCuisines(prev =>
+      prev.includes(cuisine)
+        ? prev.filter(c => c !== cuisine)
+        : [...prev, cuisine]
+    );
+  };
+
+  const handleCrowdLevelFilter = (level: string) => {
+    setSelectedCrowdLevels(prev =>
+      prev.includes(level)
+        ? prev.filter(l => l !== level)
+        : [...prev, level]
+    );
+  };
+
+  const clearFilters = () => {
+    setSelectedCuisines([]);
+    setSelectedCrowdLevels([]);
+  };
+
   const handleRefresh = () => {
-    // Simulate refresh
-    setIsOnline(false);
-    setTimeout(() => setIsOnline(true), 1000);
+    // Simulate refresh - could reload canteen data here
+    console.log('Refreshing data...');
   };
 
   const getCrowdColor = (level: string) => {
@@ -270,7 +317,7 @@ const EnhancedStudentDashboard: React.FC<EnhancedStudentDashboardProps> = ({ onN
 
             {/* Filters Section */}
             <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 mb-8">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
                   <Filter className="w-5 h-5 text-gray-600" />
                   <h3 className="text-lg font-semibold text-gray-900">Filters & Preferences</h3>
@@ -279,16 +326,86 @@ const EnhancedStudentDashboard: React.FC<EnhancedStudentDashboardProps> = ({ onN
                   onClick={() => setShowFilters(!showFilters)}
                   className="text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  Show Filters
+                  {showFilters ? 'Hide Filters' : 'Show Filters'}
                 </button>
               </div>
+              
+              {showFilters && (
+                <div className="space-y-6">
+                  {/* Cuisine Filters */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">Filter by Cuisine</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {allCuisines.map(cuisine => (
+                        <button
+                          key={cuisine}
+                          onClick={() => handleCuisineFilter(cuisine)}
+                          className={`px-3 py-2 rounded-full text-sm font-medium transition-colors ${
+                            selectedCuisines.includes(cuisine)
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {cuisine}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Crowd Level Filters */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">Filter by Crowd Level</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {allCrowdLevels.map(level => (
+                        <button
+                          key={level}
+                          onClick={() => handleCrowdLevelFilter(level)}
+                          className={`px-3 py-2 rounded-full text-sm font-medium transition-colors ${
+                            selectedCrowdLevels.includes(level)
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {level}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Filter Actions */}
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-600">
+                      {filteredCanteens.length} of {canteens.length} canteens shown
+                    </div>
+                    <button
+                      onClick={clearFilters}
+                      className="text-red-600 hover:text-red-700 font-medium text-sm"
+                    >
+                      Clear All Filters
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Canteen Recommendations */}
             <div className="space-y-6">
               <h3 className="text-xl font-bold text-gray-900">Canteen Recommendations</h3>
               
-              {canteens.map((canteen) => (
+              {filteredCanteens.length === 0 ? (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+                  <Filter className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No canteens found</h3>
+                  <p className="text-gray-600 mb-4">Try adjusting your filters to see more options.</p>
+                  <button
+                    onClick={clearFilters}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Clear All Filters
+                  </button>
+                </div>
+              ) : (
+                filteredCanteens.map((canteen) => (
                 <div key={canteen.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4">
@@ -384,7 +501,7 @@ const EnhancedStudentDashboard: React.FC<EnhancedStudentDashboardProps> = ({ onN
                     </div>
                     
                     <button 
-                      onClick={() => onNavigate('canteen-details', { canteen })}
+                      onClick={() => onNavigate('canteen-details', canteen)}
                       className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors flex items-center space-x-2"
                     >
                       <span>View Details</span>
@@ -392,7 +509,8 @@ const EnhancedStudentDashboard: React.FC<EnhancedStudentDashboardProps> = ({ onN
                     </button>
                   </div>
                 </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 

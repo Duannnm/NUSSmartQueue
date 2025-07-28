@@ -94,6 +94,9 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
     };
   }, [enableHighAccuracy, timeout, maximumAge, watch]);
 
-  return state;
+  return {
+    ...state,
+    location: state.latitude && state.longitude ? { latitude: state.latitude, longitude: state.longitude } : null
+  };
 };
 

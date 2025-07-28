@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import './App.css';
 
 // Import existing components
 import Home from './components/Home';
 import Login from './components/Login';
 import SignUp from './components/SignUp';
-import StudentDashboard from './components/StudentDashboard';
 import VendorDashboard from './components/VendorDashboard';
 import EnhancedStudentDashboard from './components/EnhancedStudentDashboard';
 import CanteenDetails from './components/CanteenDetails';
@@ -31,16 +30,6 @@ function App() {
     }
   };
 
-  const addNotification = (notification: Omit<Notification, 'id'>) => {
-    const id = Date.now().toString();
-    setNotifications(prev => [...prev, { ...notification, id }]);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-      setNotifications(prev => prev.filter(n => n.id !== id));
-    }, 5000);
-  };
-
   const removeNotification = (id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
@@ -54,7 +43,7 @@ function App() {
       case 'student-dashboard':
         return <EnhancedStudentDashboard onNavigate={navigate} />;
       case 'vendor-dashboard':
-        return <VendorDashboard onNavigate={navigate} />;
+        return <VendorDashboard user={null} onNavigate={navigate} />;
       case 'canteen-details':
         return selectedCanteen ? (
           <CanteenDetails canteen={selectedCanteen} onNavigate={navigate} />
